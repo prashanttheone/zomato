@@ -42,8 +42,6 @@ export const FirebaseProvider = (props) => {
     }
   };
 
-  
-
   const putData = async (key, data) => {
     try {
       await set(ref(database, key), data);

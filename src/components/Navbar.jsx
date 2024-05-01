@@ -97,7 +97,7 @@ const Navbar = () => {
           </h3>
         </div>
         <h1 className="text-2xl font-bold ">Flavoro Foods</h1>
-        <h1>LOVE  DARLING FUCK YOU</h1>
+        <h1>LOVE YOU BABY & FUCK YOU</h1>
       </div>
 
       <div>

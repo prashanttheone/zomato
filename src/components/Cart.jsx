@@ -44,6 +44,7 @@ const Cart = () => {
             navigate('/address');
           } catch (error) {
             console.error("Error saving payment data:", error.message);
+            navigate('/address');
             // Handle error appropriately
           }
         },

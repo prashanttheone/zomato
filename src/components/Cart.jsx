@@ -5,10 +5,11 @@ import ItemCard from "./ItemCard";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useFirebase } from "./context/Firebase";
+import { toast } from "react-hot-toast";
 
 const Cart = () => {
   const [activeCart, setActiveCart] = useState(false);
-  const { saveDataToFirestore } = useFirebase(); // Get saveDataToFirestore function from Firebase context
+  const { saveDataToFirestore, isUserSignedIn, database } = useFirebase();
 
   const cartItems = useSelector((state) => state.cart.cart);
   const totalQty = cartItems.reduce((totalQty, item) => totalQty + item.qty, 0);
@@ -18,44 +19,47 @@ const Cart = () => {
   );
 
   const navigate = useNavigate();
-  const firebase = useFirebase();
+
   const cartHandle = async () => {
     if (cartItems.length > 0) {
-      // Initialize Razorpay and open payment window
-      const options = {
-        key: "rzp_test_oRJqUKDmAoidKG",
-        key_secret: "FTBtoxH6WAXN4jhjFUhxX0a3",
-        amount: totalPrice * 100, // Amount in smallest currency unit (e.g., paisa for INR)
-        currency: "INR",
-        order_receipt: 'order_rcptid_' + new Date().getTime(), // Unique order ID
-        name: "Dev Prashant",
-        description: "Order Payment",
-        handler: async function (response) {
-          try {
-            // Save payment data to firebase
-            const paymentData = {
-              paymentId: response.razorpay_payment_id,
-              orderId: response.razorpay_order_id,
-              signature: response.razorpay_signature,
-            };
-            await  firebase.putData("users/payment", paymentData);
-            console.log(objectToString(paymentData));
-            // Redirect to address page or any other page as needed
-            navigate('/address');
-          } catch (error) {
-            console.error("Error saving payment data:", error.message);
-            navigate('/address');
-            // Handle error appropriately
+      if (isUserSignedIn()) {
+        // Initialize Razorpay and open payment window
+        const options = {
+          key: "rzp_test_oRJqUKDmAoidKG",
+          key_secret: "FTBtoxH6WAXN4jhjFUhxX0a3",
+          amount: totalPrice * 100, // Amount in smallest currency unit (e.g., paisa for INR)
+          currency: "INR",
+          order_receipt: 'order_rcptid_' + new Date().getTime(), // Unique order ID
+          name: "Dev Prashant",
+          description: "Order Payment",
+          handler: async function (response) {
+            try {
+              // Save payment data to Firebase Realtime Database
+              const paymentData = {
+                paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+              };
+              await saveDataToFirestore("payments", paymentData);
+              console.log(objectToString(paymentData));
+              // Redirect to address page or any other page as needed
+              navigate('/address');
+            } catch (error) {
+              console.error("Error saving payment data:", error.message);
+              navigate('/address');
+              // Handle error appropriately
+            }
+          },
+          theme: {
+            color: "#3399cc"
           }
-        },
-        theme: {
-          color: "#3399cc"
-        }
-      };
+        };
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      } else {
+        toast.error("Please sign in to proceed to checkout");
+      }
     } else {
       toast.error("Cart is Empty");
     }
